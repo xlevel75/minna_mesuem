@@ -1,6 +1,7 @@
 import type { Festival } from '../types'
 import { deriveRegion } from '../lib/categories'
 import { TOURAPI, PAGE_ROWS } from './apiConfig'
+import { fetchWithRetry } from './http'
 
 /**
  * Live festivals from 한국관광공사 TourAPI `searchFestival2`. Returns current +
@@ -103,7 +104,7 @@ export async function loadLiveFestivals(
   signal?: AbortSignal,
 ): Promise<{ festivals: Festival[]; error: string | null }> {
   try {
-    const res = await fetch(buildUrl(), { signal })
+    const res = await fetchWithRetry(buildUrl(), signal)
     if (!res.ok) throw new Error(`TourAPI ${res.status}`)
 
     const text = await res.text()

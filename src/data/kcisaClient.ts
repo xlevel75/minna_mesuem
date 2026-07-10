@@ -4,13 +4,15 @@
  * array of string-keyed records (`response.body.items.item[]`).
  */
 
+import { fetchWithRetry } from './http'
+
 export type KcisaRecord = Record<string, string>
 
 export async function fetchKcisaItems(
   url: string,
   signal?: AbortSignal,
 ): Promise<KcisaRecord[]> {
-  const res = await fetch(url, { signal })
+  const res = await fetchWithRetry(url, signal)
   if (!res.ok) throw new Error(`KCISA request failed: ${res.status}`)
 
   const text = await res.text()
