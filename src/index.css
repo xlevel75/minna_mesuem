@@ -1,0 +1,77 @@
+/* ===== Mobile-first design tokens ===== */
+:root {
+  /* App shell is designed for a phone-width viewport and centered on larger screens. */
+  --app-max-width: 480px;
+
+  --color-bg: #101014;
+  --color-surface: #1a1a20;
+  --color-text: #f2f2f5;
+  --color-text-muted: #9a9aa5;
+  --color-accent: #646cff;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+
+  --radius: 12px;
+
+  /* Safe-area insets (notches / home indicator) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR",
+    sans-serif;
+  line-height: 1.5;
+  color-scheme: dark;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  /* Disable pull-to-refresh / rubber-banding for an app-like feel */
+  overscroll-behavior: none;
+}
+
+#root {
+  /* Center the phone-width app shell on desktop, full-bleed on mobile.
+     A DEFINITE height (not min-height) is required so the inner scroll
+     containers can resolve their height and actually scroll. */
+  max-width: var(--app-max-width);
+  margin: 0 auto;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  /* Remove the 300ms tap delay and blue tap highlight on mobile */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
