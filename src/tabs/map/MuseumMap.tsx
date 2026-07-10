@@ -13,17 +13,20 @@ import './MuseumMap.css'
 interface Props {
   museums: Museum[]
   focus: MapFocus | null
+  /** Museum to mark as selected (highlighted pin). */
+  selectedId: string | null
   onSelect: (museum: Museum) => void
 }
 
-function markerIcon(museum: Museum): L.DivIcon {
+function markerIcon(museum: Museum, selected: boolean): L.DivIcon {
   const meta = categoryMeta(museum.category)
+  const size = selected ? 42 : 30
   return L.divIcon({
     className: 'museum-pin-wrap',
-    html: `<div class="museum-pin" style="--pin:${meta.color}"><span>${meta.icon}</span></div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 30],
-    popupAnchor: [0, -30],
+    html: `<div class="museum-pin${selected ? ' museum-pin--selected' : ''}" style="--pin:${meta.color}"><span>${meta.icon}</span></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+    popupAnchor: [0, -size],
   })
 }
 
@@ -58,13 +61,18 @@ function escapeHtml(s: string): string {
   })
 }
 
-export function MuseumMap({ museums, focus, onSelect }: Props) {
+export function MuseumMap({ museums, focus, selectedId, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null)
   const byId = useRef(new Map<string, Museum>())
+  const markersById = useRef(new Map<string, L.Marker>())
+  const focusMarkerRef = useRef<L.Marker | null>(null)
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
+  const selectedIdRef = useRef(selectedId)
+  selectedIdRef.current = selectedId
+  const prevSelectedId = useRef<string | null>(null)
 
   // Initialize the map once.
   useEffect(() => {
@@ -107,6 +115,7 @@ export function MuseumMap({ museums, focus, onSelect }: Props) {
       map.remove()
       mapRef.current = null
       clusterRef.current = null
+      focusMarkerRef.current = null
     }
   }, [])
 
@@ -117,21 +126,69 @@ export function MuseumMap({ museums, focus, onSelect }: Props) {
 
     cluster.clearLayers()
     byId.current.clear()
+    markersById.current.clear()
 
     const markers = museums.map((museum) => {
       byId.current.set(museum.id, museum)
-      const marker = L.marker([museum.lat, museum.lng], { icon: markerIcon(museum) })
+      const selected = museum.id === selectedIdRef.current
+      const marker = L.marker([museum.lat, museum.lng], { icon: markerIcon(museum, selected) })
+      if (selected) marker.setZIndexOffset(1000)
       marker.bindPopup(popupHtml(museum), { closeButton: true, offset: [0, -8] })
+      markersById.current.set(museum.id, marker)
       return marker
     })
     cluster.addLayers(markers)
   }, [museums])
 
-  // React to cross-tab focus requests ("지도로 보기").
+  // Move the "selected" highlight between markers as the selection changes.
+  useEffect(() => {
+    const prev = prevSelectedId.current
+    if (prev && prev !== selectedId) {
+      const marker = markersById.current.get(prev)
+      const museum = byId.current.get(prev)
+      if (marker && museum) {
+        marker.setIcon(markerIcon(museum, false))
+        marker.setZIndexOffset(0)
+      }
+    }
+    if (selectedId) {
+      const marker = markersById.current.get(selectedId)
+      const museum = byId.current.get(selectedId)
+      if (marker && museum) {
+        marker.setIcon(markerIcon(museum, true))
+        marker.setZIndexOffset(1000)
+      }
+    }
+    prevSelectedId.current = selectedId
+  }, [selectedId, museums])
+
+  // React to focus requests. A 'location' focus (event/festival site) drops a
+  // blinking red dot; a 'museum' focus just flies (its pin is highlighted via
+  // selectedId) and clears any existing dot.
   useEffect(() => {
     const map = mapRef.current
     if (!map || !focus) return
     map.flyTo([focus.lat, focus.lng], 14, { duration: 0.8 })
+
+    if (focus.kind === 'location') {
+      if (!focusMarkerRef.current) {
+        focusMarkerRef.current = L.marker([focus.lat, focus.lng], {
+          icon: L.divIcon({
+            className: 'focus-dot-wrap',
+            html: '<div class="focus-dot"></div>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+          }),
+          zIndexOffset: 2000,
+          interactive: false,
+        }).addTo(map)
+      } else {
+        focusMarkerRef.current.setLatLng([focus.lat, focus.lng])
+      }
+    } else if (focusMarkerRef.current) {
+      focusMarkerRef.current.remove()
+      focusMarkerRef.current = null
+    }
   }, [focus])
 
   return <div ref={containerRef} className="museum-map" />

@@ -18,9 +18,12 @@ export function useEvents(): State {
   })
 
   useEffect(() => {
-    const controller = new AbortController()
-    loadEvents(controller.signal)
+    // loadEvents owns a shared, un-abortable fetch; we just ignore the result
+    // if this consumer unmounted (rather than aborting the shared request).
+    let cancelled = false
+    loadEvents()
       .then((res) => {
+        if (cancelled) return
         setState({
           exhibitions: res.exhibitions,
           performances: res.performances,
@@ -29,11 +32,13 @@ export function useEvents(): State {
         })
       })
       .catch((e: unknown) => {
-        if (controller.signal.aborted) return
+        if (cancelled) return
         const message = e instanceof Error ? e.message : String(e)
         setState({ exhibitions: [], performances: [], loading: false, errors: [message] })
       })
-    return () => controller.abort()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   return state

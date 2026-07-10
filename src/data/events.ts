@@ -70,9 +70,8 @@ async function fetchSource(
   path: string,
   serviceKey: string,
   source: EventItem['source'],
-  signal?: AbortSignal,
 ): Promise<EventItem[]> {
-  const records = await fetchKcisaItems(buildUrl(path, serviceKey), signal)
+  const records = await fetchKcisaItems(buildUrl(path, serviceKey))
   return records
     .map((r, i) => toEvent(r, source, i))
     .filter((e) => e.title)
@@ -89,14 +88,17 @@ let inflight: Promise<EventsResult> | null = null
 
 /**
  * Fetch both event sources once and share the result (both the Map and Events
- * tabs consume it). A failing source degrades to an empty list.
+ * tabs consume it). The shared fetch is intentionally NOT tied to any caller's
+ * abort signal — otherwise one consumer unmounting (e.g. React StrictMode's
+ * double-mount in dev) would abort the fetch for everyone. Only a fully
+ * successful result is cached, so a transient failure can retry.
  */
-export async function loadEvents(signal?: AbortSignal): Promise<EventsResult> {
+export async function loadEvents(): Promise<EventsResult> {
   if (cache) return cache
   if (!inflight) {
-    inflight = fetchEvents(signal)
+    inflight = fetchEvents()
       .then((r) => {
-        cache = r
+        if (r.errors.length === 0) cache = r
         return r
       })
       .finally(() => {
@@ -106,28 +108,22 @@ export async function loadEvents(signal?: AbortSignal): Promise<EventsResult> {
   return inflight
 }
 
-async function fetchEvents(signal?: AbortSignal): Promise<EventsResult> {
+async function fetchEvents(): Promise<EventsResult> {
   const errors: string[] = []
 
   const [exhibitions, performances] = await Promise.all([
-    fetchSource(
-      KCISA.paths.exhibition,
-      KCISA.keys.exhibition,
-      'exhibition',
-      signal,
-    ).catch((e: unknown) => {
-      errors.push(`전시 정보를 불러오지 못했습니다 (${describe(e)})`)
-      return [] as EventItem[]
-    }),
-    fetchSource(
-      KCISA.paths.performance,
-      KCISA.keys.performance,
-      'performance',
-      signal,
-    ).catch((e: unknown) => {
-      errors.push(`공연 정보를 불러오지 못했습니다 (${describe(e)})`)
-      return [] as EventItem[]
-    }),
+    fetchSource(KCISA.paths.exhibition, KCISA.keys.exhibition, 'exhibition').catch(
+      (e: unknown) => {
+        errors.push(`전시 정보를 불러오지 못했습니다 (${describe(e)})`)
+        return [] as EventItem[]
+      },
+    ),
+    fetchSource(KCISA.paths.performance, KCISA.keys.performance, 'performance').catch(
+      (e: unknown) => {
+        errors.push(`공연 정보를 불러오지 못했습니다 (${describe(e)})`)
+        return [] as EventItem[]
+      },
+    ),
   ])
 
   return { exhibitions, performances, errors }

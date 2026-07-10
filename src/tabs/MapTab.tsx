@@ -26,6 +26,7 @@ export function MapTab({ active }: { active: boolean }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<Category | null>(null)
   const [selected, setSelected] = useState<Museum | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showList, setShowList] = useState(false)
 
   const filtered = useMemo(() => {
@@ -49,11 +50,18 @@ export function MapTab({ active }: { active: boolean }) {
     [selected, allEvents],
   )
 
-  // Picking from the list closes it and flies the map to that museum.
+  // Tapping a map pin selects (highlights) it and opens its detail.
+  const selectFromMap = (m: Museum) => {
+    setSelected(m)
+    setSelectedId(m.id)
+  }
+
+  // Picking from the list closes it, highlights it, and flies the map to it.
   const selectFromList = (m: Museum) => {
     setSelected(m)
+    setSelectedId(m.id)
     setShowList(false)
-    focusOnMap({ lat: m.lat, lng: m.lng, name: m.name })
+    focusOnMap({ lat: m.lat, lng: m.lng, name: m.name }, 'museum')
   }
 
   return (
@@ -71,7 +79,12 @@ export function MapTab({ active }: { active: boolean }) {
       <div className="map-tab__body">
         {/* Only mount the map once the tab is first shown so Leaflet sizes correctly. */}
         {active && !error && (
-          <MuseumMap museums={filtered} focus={mapFocus} onSelect={setSelected} />
+          <MuseumMap
+            museums={filtered}
+            focus={mapFocus}
+            selectedId={selectedId}
+            onSelect={selectFromMap}
+          />
         )}
 
         {error && (
