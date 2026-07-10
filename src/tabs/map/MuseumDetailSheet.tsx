@@ -1,15 +1,16 @@
 import type { ReactNode } from 'react'
-import type { Museum } from '../../types'
+import type { EventItem, Museum } from '../../types'
 import { CategoryBadge, RegionBadge } from '../../components/Badge'
 import { formatHours, formatFee, normalizeUrl } from '../../lib/format'
 import './MuseumDetailSheet.css'
 
 interface Props {
   museum: Museum | null
+  events: EventItem[]
   onClose: () => void
 }
 
-export function MuseumDetailSheet({ museum, onClose }: Props) {
+export function MuseumDetailSheet({ museum, events, onClose }: Props) {
   if (!museum) return null
 
   const hours = formatHours(museum.weekdayOpen, museum.weekdayClose)
@@ -59,6 +60,20 @@ export function MuseumDetailSheet({ museum, onClose }: Props) {
             </Row>
           )}
         </dl>
+
+        {events.length > 0 && (
+          <div className="detail-sheet__events">
+            <h3 className="detail-sheet__events-title">🎫 진행 중인 행사</h3>
+            <ul className="detail-sheet__events-list">
+              {events.slice(0, 5).map((e) => (
+                <li key={e.id}>
+                  <span className="detail-sheet__event-title">{e.title}</span>
+                  {e.period && <span className="detail-sheet__event-period">{e.period}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {museum.description && <p className="detail-sheet__desc">{museum.description}</p>}
       </div>

@@ -1,10 +1,20 @@
-import type { Museum, Region } from '../types'
+import type { EventItem, Museum, Region } from '../types'
 import { REGION_CENTROID } from './geo'
 
 export interface MapTarget {
   lat: number
   lng: number
   name: string
+}
+
+/** Events whose venue/title contains this museum's name (its exhibitions). */
+export function eventsForMuseum(museum: Museum, events: EventItem[]): EventItem[] {
+  const name = museum.name.replace(/\s+/g, '')
+  if (name.length < 3) return []
+  return events.filter((e) => {
+    const hay = `${e.place} ${e.title} ${e.address}`.replace(/\s+/g, '')
+    return hay.includes(name)
+  })
 }
 
 /** Find a museum whose (whitespace-stripped) name appears in the given text. */

@@ -84,8 +84,29 @@ export interface EventsResult {
   errors: string[]
 }
 
-/** Fetch both event sources; a failing source degrades to an empty list. */
+let cache: EventsResult | null = null
+let inflight: Promise<EventsResult> | null = null
+
+/**
+ * Fetch both event sources once and share the result (both the Map and Events
+ * tabs consume it). A failing source degrades to an empty list.
+ */
 export async function loadEvents(signal?: AbortSignal): Promise<EventsResult> {
+  if (cache) return cache
+  if (!inflight) {
+    inflight = fetchEvents(signal)
+      .then((r) => {
+        cache = r
+        return r
+      })
+      .finally(() => {
+        inflight = null
+      })
+  }
+  return inflight
+}
+
+async function fetchEvents(signal?: AbortSignal): Promise<EventsResult> {
   const errors: string[] = []
 
   const [exhibitions, performances] = await Promise.all([

@@ -6,21 +6,13 @@ import { useEvents } from '../hooks/useEvents'
 import { useMuseums } from '../hooks/useMuseums'
 import { useApp } from '../store/appStore'
 import { SearchInput } from '../components/SearchInput'
-import { FilterChips, type ChipOption } from '../components/FilterChips'
+import { Select } from '../components/Select'
 import { Accordion } from '../components/Accordion'
 import { EventCard } from './events/EventCard'
 import './EventsTab.css'
 
-const CATEGORY_OPTIONS: ChipOption<Category>[] = CATEGORIES.map((c) => ({
-  value: c.key,
-  label: c.label,
-  icon: c.icon,
-}))
-
-const REGION_OPTIONS: ChipOption<Region>[] = REGIONS.map((r) => ({
-  value: r.key,
-  label: r.label,
-}))
+const CATEGORY_OPTIONS = CATEGORIES.map((c) => ({ value: c.key, label: c.label }))
+const REGION_OPTIONS = REGIONS.map((r) => ({ value: r.key, label: r.label }))
 
 export function EventsTab() {
   const { exhibitions, performances, loading, errors } = useEvents()
@@ -86,13 +78,20 @@ export function EventsTab() {
         <h1 className="events-tab__title">문화 행사 소식</h1>
         <p className="events-tab__lead">전국 박물관과 문화 공간에서 열리는 다채로운 전시와 공연</p>
         <SearchInput value={query} onChange={setQuery} placeholder="행사 이름 또는 지역 검색" />
-        <FilterChips options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
-        <FilterChips
-          options={REGION_OPTIONS}
-          value={region}
-          onChange={setRegion}
-          allLabel="전체 지역"
-        />
+        <div className="events-tab__filters">
+          <Select
+            value={category}
+            options={CATEGORY_OPTIONS}
+            onChange={setCategory}
+            allLabel="전체 카테고리"
+          />
+          <Select
+            value={region}
+            options={REGION_OPTIONS}
+            onChange={setRegion}
+            allLabel="전체 지역"
+          />
+        </div>
       </header>
 
       <div className="events-tab__body">

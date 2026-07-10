@@ -24,6 +24,11 @@
   color: var(--color-text-muted);
 }
 
+.events-tab__filters {
+  display: flex;
+  gap: 8px;
+}
+
 .events-tab__body {
   flex: 1;
   min-height: 0;

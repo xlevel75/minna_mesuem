@@ -102,6 +102,46 @@
   word-break: break-all;
 }
 
+.detail-sheet__events {
+  margin-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 14px;
+}
+
+.detail-sheet__events-title {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.detail-sheet__events-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-sheet__events-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.detail-sheet__event-title {
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.detail-sheet__event-period {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
 .detail-sheet__desc {
   margin: 16px 0 0;
   font-size: 0.86rem;

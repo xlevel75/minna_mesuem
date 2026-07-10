@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import type { Category, Museum } from '../types'
 import { CATEGORIES } from '../lib/categories'
+import { eventsForMuseum } from '../lib/matchLocation'
 import { useMuseums } from '../hooks/useMuseums'
+import { useEvents } from '../hooks/useEvents'
 import { useApp } from '../store/appStore'
 import { SearchInput } from '../components/SearchInput'
 import { FilterChips, type ChipOption } from '../components/FilterChips'
@@ -10,15 +12,16 @@ import { MuseumDetailSheet } from './map/MuseumDetailSheet'
 import { MuseumList } from './map/MuseumList'
 import './MapTab.css'
 
+// Text-only, icon-less chips so all categories fit on one compact row.
 const CATEGORY_OPTIONS: ChipOption<Category>[] = CATEGORIES.map((c) => ({
   value: c.key,
   label: c.label,
-  icon: c.icon,
 }))
 
 export function MapTab({ active }: { active: boolean }) {
   const { museums, loading, error } = useMuseums()
-  const { mapFocus } = useApp()
+  const { exhibitions, performances } = useEvents()
+  const { mapFocus, focusOnMap } = useApp()
 
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<Category | null>(null)
@@ -37,9 +40,20 @@ export function MapTab({ active }: { active: boolean }) {
     })
   }, [museums, query, category])
 
+  const allEvents = useMemo(
+    () => [...exhibitions, ...performances],
+    [exhibitions, performances],
+  )
+  const selectedEvents = useMemo(
+    () => (selected ? eventsForMuseum(selected, allEvents) : []),
+    [selected, allEvents],
+  )
+
+  // Picking from the list closes it and flies the map to that museum.
   const selectFromList = (m: Museum) => {
     setSelected(m)
     setShowList(false)
+    focusOnMap({ lat: m.lat, lng: m.lng, name: m.name })
   }
 
   return (
@@ -87,7 +101,11 @@ export function MapTab({ active }: { active: boolean }) {
           />
         )}
 
-        <MuseumDetailSheet museum={selected} onClose={() => setSelected(null)} />
+        <MuseumDetailSheet
+          museum={selected}
+          events={selectedEvents}
+          onClose={() => setSelected(null)}
+        />
       </div>
     </div>
   )
